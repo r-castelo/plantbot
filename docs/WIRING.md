@@ -35,7 +35,7 @@ Everything sits on the **left header (J1)**, so one side of the board takes all 
 | UART1 RX ← player | **GPIO 18** | DFPlayer `TX` | |
 | *(optional)* Touch pad | **GPIO 2** (TOUCH2) | Copper-tape pad / wire on the pot | A "poke me" pad that makes the plant talk on demand |
 
-Free for later: GPIO 1, 5, 6, 7, 21, 38–42, 47.
+Free for later: GPIO 1, 5 (reserved for e-paper PWR if needed), 6, 7, 21, 38–42, 47.
 
 ## 3. Power
 
@@ -97,21 +97,33 @@ Adafruit BH1750: use `VIN` (it has its own regulator), not `3Vo`. You can also u
 
 Calibration happens in firmware. Record the raw value in dry air and in a glass of water, then map between the two. Typically about 2.5 V dry and 1.2 V wet at a 3.3 V supply. Seal the exposed electronics at the top edge with nail polish, hot glue or heat-shrink. Water creeping in there is what kills these sensors. Push it into the soil only up to the printed line.
 
-### 4.3 1.54" 200×200 B/W e-paper (SSD1681 controller, Waveshare/WeAct/Good Display style)
+### 4.3 Waveshare 1.54" e-Paper Module (200×200 B/W)
 
-| EPD pin | Connects to |
-|---|---|
-| VCC | 3V3 |
-| GND | GND |
-| DIN (sometimes "SDA") | GPIO 11 |
-| CLK (sometimes "SCL") | GPIO 12 |
-| CS | GPIO 10 |
-| DC | GPIO 13 |
-| RST | GPIO 14 |
-| BUSY | GPIO 15 |
+Waveshare has sold two generations of this module:
 
-> Even when the module labels its pins SDA/SCL, it is **SPI**. Do **not** put it on the I²C bus.
-> If yours is a bare panel with a 24-pin FPC ribbon, you also need an e-paper driver HAT. The 8-pin modules already include it.
+| Version | How to tell | Controller | GxEPD2 driver class |
+|---|---|---|---|
+| **V2** (anything bought in recent years) | "V2" printed on the sticker on the back of the panel or on the PCB | SSD1681 | `GxEPD2_154_D67` |
+| V1 (old stock) | no "V2" marking | IL3829 / SSD1608 | `GxEPD2_154` |
+
+Use the Waveshare colour-coded cable that comes with the module:
+
+| Module pin | Cable colour | Connects to |
+|---|---|---|
+| VCC | grey or red | 3V3 |
+| GND | brown or black | GND |
+| DIN | blue | GPIO 11 |
+| CLK | yellow | GPIO 12 |
+| CS | orange | GPIO 10 |
+| DC | green | GPIO 13 |
+| RST | white | GPIO 14 |
+| BUSY | purple | GPIO 15 |
+| PWR (only on newer 9-pin boards) | red/brown | 3V3, or GPIO 5 if we later want to cut the display's power in software |
+
+> The cable colours vary between batches, so **go by the pin labels printed on the PCB**, not the colours.
+> If your board has a 9th pin labelled **PWR**, it must be driven HIGH or the display stays blank. Tie it to 3V3.
+> If there is a small **BS / interface switch**, set it to **4-line SPI** (`0`).
+> This module is SPI, so do **not** put it on the I²C bus.
 
 ### 4.4 DFPlayer Mini (clone) + speaker
 
