@@ -1,0 +1,775 @@
+<title>Plantbot Build Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: one readable column (workbench notebook) with wide figure plates that break out of it. */
+:root{
+  --bg:#f2f3ee; --paper:#fbfbf7; --ink:#1c2420; --muted:#5b665f; --line:#d6dad0;
+  --leaf:#2f7a45; --leaf-soft:#e2efe3; --copper:#b4642c; --solder:#9aa3a8; --warn:#b3261e; --warn-soft:#f9e3e0;
+  --tip:#7a5a00; --tip-soft:#fbf0cf;
+  --w-3v3:#d7263d; --w-5v:#ef7d1a; --w-gnd:#22262a; --w-sda:#f4f4f0; --w-scl:#e8c51b; --w-sig:#2f9e5a;
+  --w-blue:#2d6cdf; --w-violet:#7b4fd6; --w-pink:#d94f9b; --w-brown:#8a5a33; --w-teal:#16a3a3; --w-grey:#8d959b;
+  --casing:#1c2420; --board:#14532d; --board-edge:#0d3b20; --pin:#c9a227; --module:#2b3a8f; --module-txt:#f2f2ee;
+  --f-display:"Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --f-body:"Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --f-mono:"JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#121614; --paper:#191e1b; --ink:#e7ebe5; --muted:#9aa59d; --line:#2e3631;
+  --leaf:#6cc487; --leaf-soft:#1c3324; --copper:#e0915a; --solder:#c3cbd0; --warn:#ff8a80; --warn-soft:#3a1c1a;
+  --tip:#f2cf63; --tip-soft:#352c10; --w-gnd:#4a525a; --casing:#000; --board:#1f6a3b; --board-edge:#2c8a50; --module:#3c4fb8;
+  color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#121614; --paper:#191e1b; --ink:#e7ebe5; --muted:#9aa59d; --line:#2e3631;
+  --leaf:#6cc487; --leaf-soft:#1c3324; --copper:#e0915a; --solder:#c3cbd0; --warn:#ff8a80; --warn-soft:#3a1c1a;
+  --tip:#f2cf63; --tip-soft:#352c10; --w-gnd:#4a525a; --casing:#000; --board:#1f6a3b; --board-edge:#2c8a50; --module:#3c4fb8;
+  color-scheme:dark }
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:17px/1.6 var(--f-body);margin:0;padding-inline:16px;padding-block:0 64px}
+.wrap{max-width:760px;margin:0 auto}
+.plate{max-width:1000px;margin:20px auto;overflow-x:auto}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;line-height:1.15;margin:0}
+h1{font-size:clamp(2.2rem,6vw,3.6rem);font-weight:800;letter-spacing:-.02em}
+h2{font-size:1.9rem;font-weight:800;margin-top:64px;padding-top:12px;border-top:3px solid var(--ink)}
+h3{font-size:1.3rem;font-weight:700;margin-top:36px}
+p,li{max-width:68ch}
+code,.mono{font-family:var(--f-mono);font-size:.88em}
+.pin{font-family:var(--f-mono);font-weight:700;font-size:.85em;background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:0 .35em;white-space:nowrap}
+a{color:var(--leaf)}
+.eyebrow{font-family:var(--f-mono);font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:var(--leaf);font-weight:700}
+header.hero{padding-block:48px 8px}
+.hero p.lede{font-size:1.2rem;color:var(--muted);margin-top:14px}
+.facts{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px;padding:0;list-style:none}
+.facts li{background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:4px 14px;font-size:.92rem}
+nav.toc{margin-top:28px;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:16px 20px}
+nav.toc ol{margin:6px 0 0;padding-left:1.4em;columns:2;column-gap:28px}
+@media (max-width:560px){nav.toc ol{columns:1}}
+nav.toc li{margin:2px 0}
+.callout{border-radius:10px;padding:14px 18px;margin:18px 0;border:1px solid}
+.callout strong:first-child{display:block;font-family:var(--f-display);font-size:1.05rem;margin-bottom:2px}
+.callout.warn{background:var(--warn-soft);border-color:var(--warn);}
+.callout.warn strong:first-child{color:var(--warn)}
+.callout.tip{background:var(--tip-soft);border-color:var(--tip)}
+.callout.tip strong:first-child{color:var(--tip)}
+.callout.leaf{background:var(--leaf-soft);border-color:var(--leaf)}
+.callout.leaf strong:first-child{color:var(--leaf)}
+.callout p{margin:.3em 0}
+
+/* Steps: a real sequence, so they are numbered */
+.step{display:grid;grid-template-columns:44px minmax(0,1fr);gap:14px;margin:26px 0}
+.step .n{width:40px;height:40px;border-radius:50%;background:var(--ink);color:var(--bg);display:grid;place-items:center;font-family:var(--f-display);font-weight:800;font-size:1.05rem}
+.step .body>h4{font-family:var(--f-display);font-size:1.12rem;margin:6px 0 4px}
+.step .body>p{margin:.3em 0}
+.done-toggle{display:inline-flex;align-items:center;gap:8px;margin-top:8px;font-size:.9rem;color:var(--muted);cursor:pointer;user-select:none}
+.done-toggle input{width:18px;height:18px;accent-color:var(--leaf)}
+.step.is-done .n{background:var(--leaf)}
+
+figure{margin:22px 0}
+figure svg{display:block;width:100%;height:auto;background:var(--paper);border:1px solid var(--line);border-radius:12px}
+figcaption{font-size:.9rem;color:var(--muted);margin-top:8px;max-width:68ch}
+.plate > figure{min-width:640px}
+.panels{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.panels figure{margin:0}
+
+table{border-collapse:collapse;width:100%;font-size:.95rem}
+.tablewrap{overflow-x:auto;margin:16px 0}
+th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--f-mono);font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+td.num{font-variant-numeric:tabular-nums}
+.sw{display:inline-block;width:.9em;height:.9em;border-radius:3px;vertical-align:-.1em;border:1px solid var(--casing);margin-right:6px}
+.check ul{list-style:none;padding:0}
+.check li{padding-left:28px;position:relative;margin:6px 0}
+.check li::before{content:"";position:absolute;left:0;top:.35em;width:16px;height:16px;border:2px solid var(--leaf);border-radius:4px}
+.theme-btn{position:fixed;right:14px;top:calc(env(safe-area-inset-top,0px) + 12px);background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font:600 .85rem var(--f-body);cursor:pointer;z-index:5}
+button:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid var(--copper);outline-offset:2px}
+.progress{font-family:var(--f-mono);font-size:.85rem;color:var(--muted);margin-top:10px}
+.progress b{color:var(--leaf)}
+svg text{font-family:var(--f-body)}
+svg .mono{font-family:var(--f-mono)}
+</style>
+
+<button class="theme-btn" id="themeBtn" type="button" aria-label="Toggle light or dark theme">◐ Theme</button>
+
+<div class="wrap">
+<header class="hero">
+  <div class="eyebrow">Grumpy Plant · DIY build guide · v1</div>
+  <h1>Plantbot Build Guide</h1>
+  <p class="lede">Wire up a talking, face-pulling plant buddy with an ESP32-S3, four sensors, an e-paper face and a speaker. No breadboard, no circuit board: every part connects with soldered cables that plug straight onto the ESP32.</p>
+  <ul class="facts">
+    <li>⏱ 3–4 hours</li><li>Level: first-time solderer</li><li>≈ 40 solder joints</li><li>Unplug-able: the ESP32 stays removable</li>
+  </ul>
+  <div class="progress" id="progress"></div>
+  <nav class="toc" aria-label="Contents">
+    <strong>Contents</strong>
+    <ol>
+      <li><a href="#plan">The plan in one picture</a></li>
+      <li><a href="#stuff">Tools &amp; materials</a></li>
+      <li><a href="#skills">Soldering school (3 skills)</a></li>
+      <li><a href="#pigtails">Make plug-ended wires</a></li>
+      <li><a href="#harness">Build the sensor harness</a></li>
+      <li><a href="#player">Wire the MP3 player &amp; speaker</a></li>
+      <li><a href="#epaper">Connect the e-paper</a></li>
+      <li><a href="#test">Test before you plug in</a></li>
+      <li><a href="#plug">Plug everything in</a></li>
+      <li><a href="#finish">Waterproof, SD card, first boot</a></li>
+      <li><a href="#trouble">If something doesn't work</a></li>
+      <li><a href="#pinmap">Pin map reference</a></li>
+    </ol>
+  </nav>
+</header>
+
+<!-- ============ PLAN ============ -->
+<h2 id="plan">1 · The plan in one picture</h2>
+<p>The ESP32 is the brain. It has rows of metal pins on both long edges. Every other part reaches it through a wire that ends in a small black <strong>female plug</strong> (a "Dupont" connector) that pushes onto one pin. You will solder only where wires have to <em>join</em>: three sensors share the same four wires, the speaker needs leads, and the MP3 player gets a resistor and a capacitor.</p>
+</div>
+
+<div class="plate"><figure>
+  <svg id="figOverview" viewBox="0 0 980 600" role="img" aria-label="Overview: sensors, e-paper and MP3 player connect to the ESP32"></svg>
+  <figcaption>What you'll end up with. You will build three bundles: the <strong>sensor harness</strong>, which has solder joints; the <strong>e-paper cable</strong>, which comes in the box and needs no soldering; and the <strong>player cables</strong>, which have a few joints. Every bundle ends in plugs on the ESP32.</figcaption>
+</figure></div>
+
+<div class="wrap">
+<div class="callout leaf"><strong>Why plugs on the ESP32 and solder everywhere else?</strong>
+<p>Solder joints don't wiggle loose, so the joins between wires are soldered. The ESP32 end uses plugs so you can pull the brain out to reflash or replace it, and fix a wrong pin by just moving a plug.</p></div>
+
+<!-- ============ STUFF ============ -->
+<h2 id="stuff">2 · Tools &amp; materials</h2>
+<h3>Tools</h3>
+<div class="tablewrap"><table>
+<thead><tr><th>Tool</th><th>Why / what to buy</th></tr></thead>
+<tbody>
+<tr><td>Soldering iron, temperature-controlled</td><td>A 60 W station or pen-style iron (Pinecil, TS101 or similar). Set it to <strong>330 °C</strong> for leaded solder, <strong>360 °C</strong> for lead-free.</td></tr>
+<tr><td>Solder, 0.8 mm, with flux core</td><td>Sn63/Pb37 (leaded) flows easiest for beginners. Lead-free (SAC305) works too. Wash your hands after using leaded solder.</td></tr>
+<tr><td>Brass-wool tip cleaner</td><td>Keeps the tip shiny. A dirty tip won't melt solder.</td></tr>
+<tr><td>Wire stripper</td><td>An automatic stripper or one with a 26–22 AWG notch. Thin wires are easy to cut by accident with a knife.</td></tr>
+<tr><td>Flush cutters</td><td>For trimming wires and component legs.</td></tr>
+<tr><td>"Helping hands" or a lump of Blu-Tack</td><td>Holds wires still while you solder. You need both hands free.</td></tr>
+<tr><td>Heat gun or lighter</td><td>Shrinks the heat-shrink tubing. Use a lighter flame quickly from the side, never in the tip of the flame.</td></tr>
+<tr><td>Multimeter with a beep mode</td><td>For the continuity tests in <a href="#test">section 8</a>. The cheapest one works.</td></tr>
+<tr><td>Safety glasses</td><td>Trimmed wire ends and flux spatter fly. Wear them.</td></tr>
+</tbody></table></div>
+
+<h3>Materials (on top of the parts you already have)</h3>
+<div class="tablewrap"><table>
+<thead><tr><th>Qty</th><th>Item</th><th>Used for</th></tr></thead>
+<tbody>
+<tr><td class="num">1 pack</td><td><strong>Female–female Dupont jumper wires</strong>, 20 cm, 40 pcs</td><td>Cut in half, each one gives two "pigtails" with a plug on one end</td></tr>
+<tr><td class="num">1 pack</td><td><strong>Grove 4-pin cables</strong> (usually included with Grove modules)</td><td>Cut in half for the AHT20 and VL53L0X</td></tr>
+<tr><td class="num">1 set</td><td><strong>Heat-shrink tubing</strong> assortment, including 1.5 mm, 2.5 mm, 6 mm</td><td>Insulates every joint</td></tr>
+<tr><td class="num">~2 m</td><td>Stranded hookup wire, 24–26 AWG, red/black/white/yellow (optional)</td><td>Extensions if a sensor sits far away</td></tr>
+<tr><td class="num">1</td><td><strong>1 kΩ resistor</strong> (brown-black-red-gold)</td><td>Quiets digital hiss on the MP3 player's data line</td></tr>
+<tr><td class="num">1</td><td><strong>470 µF / 10 V electrolytic capacitor</strong> (6.3 mm wide is ideal)</td><td>A small energy tank for the speaker's loud moments</td></tr>
+<tr><td class="num">1</td><td>microSD card, 32 GB or less</td><td>Holds the voice clips</td></tr>
+<tr><td class="num">1</td><td>5 V / 2 A USB-C phone charger + cable</td><td>Powers everything</td></tr>
+<tr><td class="num">a few</td><td>Masking tape + pen, zip ties, hot glue</td><td>Labels and strain relief</td></tr>
+</tbody></table></div>
+
+<div class="callout tip"><strong>No-solder shortcut for the sensors</strong>
+<p>A passive <strong>Grove I²C Hub</strong> (about €2) can replace the splices in <a href="#harness">section 5</a>: plug all three sensors into it and run a single Grove-to-female-jumper cable to the ESP32. The moisture sensor still needs 3V3 and GND, though. This guide shows the soldered way.</p></div>
+
+<!-- ============ SKILLS ============ -->
+<h2 id="skills">3 · Soldering school: three skills</h2>
+<p>This whole build uses only three moves. <strong>Practise each one twice on scrap wire before you touch the real parts.</strong> Ten minutes of practice saves an hour of redoing joints.</p>
+
+<div class="callout warn"><strong>Safety first</strong>
+<p>The tip is about 350 °C. Always park the iron in its stand, never on the table. Work near an open window or a small fan, because flux smoke is irritating. Unplug the iron when you take a break.</p></div>
+
+<h3>Skill A · Strip and tin a wire</h3>
+<p>"Tinning" means coating the bare copper with a thin layer of solder. Tinned wires join in a second.</p>
+</div>
+<div class="plate"><div class="panels" id="panelsTin"></div></div>
+<div class="wrap">
+<ol>
+<li><strong>Strip 6 mm</strong> of insulation. Don't nick the copper strands. If a few strands get cut, cut the end off and strip again.</li>
+<li><strong>Twist the strands</strong> tightly clockwise between your fingers so no strays stick out.</li>
+<li><strong>Heat and feed.</strong> Hold the iron tip under the copper for 1 second, then touch the solder to the copper on the <em>other</em> side, not to the iron. The solder soaks into the strands like water into a sponge.</li>
+<li><strong>Check:</strong> the strands should look silver and slightly shiny, still showing their twisted texture, and not be a fat blob.</li>
+</ol>
+
+<h3>Skill B · Join two wires and cover the joint</h3>
+</div>
+<div class="plate"><div class="panels" id="panelsSplice"></div></div>
+<div class="wrap">
+<ol>
+<li><strong>Slide heat-shrink on first!</strong> Cut 15 mm of tubing and push it onto one wire, far away from the joint. Forgetting this is the #1 beginner mistake. Everyone does it once.</li>
+<li>Tin both wire ends (Skill A).</li>
+<li>Lay the two tinned ends side by side, overlapping about 5 mm, and hold them still with helping hands or Blu-Tack.</li>
+<li>Touch the iron to the overlap for 2–3 seconds. The tinning on both wires melts together. Add a tiny bit of fresh solder if needed.</li>
+<li>Count to 5 without moving the wires while the joint cools.</li>
+<li>Slide the tubing over the joint and shrink it with the heat gun.</li>
+</ol>
+
+<h3>Skill C · Solder a wire to a pin, hole or tab</h3>
+</div>
+<div class="plate"><div class="panels" id="panelsPad"></div></div>
+<div class="wrap">
+<ol>
+<li>Tin the wire. Also tin the tab or pad: heat it and touch solder to it until a small pool forms.</li>
+<li>Hold the wire against the tab (or push it through the hole), heat both together, and let the solder flow around the wire.</li>
+<li>A good joint looks like a smooth little <strong>volcano</strong> or fillet. A ball sitting on top means the pad wasn't hot enough, so reheat it.</li>
+</ol>
+
+<h3>Good joint, bad joint</h3>
+</div>
+<div class="plate"><div class="panels" id="panelsJoints"></div></div>
+<div class="wrap">
+
+<!-- ============ PIGTAILS ============ -->
+<h2 id="pigtails">4 · Make plug-ended wires ("pigtails")</h2>
+<p>A pigtail is half a jumper wire: a female plug on one end and bare wire on the other. Almost every connection to the ESP32 starts as a pigtail.</p>
+</div>
+<div class="plate"><figure><svg id="figPigtail" viewBox="0 0 980 230" role="img" aria-label="Cut a female-female jumper in the middle to get two pigtails"></svg>
+<figcaption>Cut a female–female jumper in the middle, strip and tin both cut ends, and you have two pigtails. Then flag each one with masking tape.</figcaption></figure></div>
+<div class="wrap">
+
+<div class="step"><div class="n">1</div><div class="body"><h4>Cut 8 pigtails</h4>
+<p>Cut 4 jumpers in half. Pick colours that match their job so the wiring stays readable: <span class="sw" style="background:var(--w-3v3)"></span>red = 3V3, <span class="sw" style="background:var(--w-gnd)"></span>black = GND, <span class="sw" style="background:var(--w-sda)"></span>white = SDA, <span class="sw" style="background:var(--w-scl)"></span>yellow = SCL, <span class="sw" style="background:var(--w-5v)"></span>orange = 5V, plus any 3 others for the MP3 player.</p>
+<label class="done-toggle"><input type="checkbox" data-step="pig1"> Done</label></div></div>
+
+<div class="step"><div class="n">2</div><div class="body"><h4>Strip and tin the cut ends</h4>
+<p>Skill A: strip 6 mm, twist, tin.</p>
+<label class="done-toggle"><input type="checkbox" data-step="pig2"> Done</label></div></div>
+
+<div class="step"><div class="n">3</div><div class="body"><h4>Flag every pigtail now</h4>
+<p>Wrap a little masking-tape flag right behind the plug and write where it goes, for example <span class="pin">J1-1 3V3</span>. Flags written now save you from guessing later.</p>
+<label class="done-toggle"><input type="checkbox" data-step="pig3"> Done</label></div></div>
+
+<div class="callout leaf"><strong>How to read pin names in this guide</strong>
+<p>Hold the ESP32 with the USB ports pointing <strong>down</strong> and the chip facing you. The left pin row is <span class="pin">J1</span> and the right one is <span class="pin">J3</span>, each counted <strong>1 to 22 from the top</strong>. So <span class="pin">J1-1</span> is the top-left pin (3V3) and <span class="pin">J1-22</span> is the bottom-left pin (GND), right next to the USB ports. The full map is in <a href="#plug">section 9</a>.</p></div>
+
+<!-- ============ HARNESS ============ -->
+<h2 id="harness">5 · Build the sensor harness</h2>
+<p>The light, temperature and proximity sensors all talk over one shared pair of wires called <strong>I²C</strong> (SDA = data, SCL = clock), and each also needs power (3V3) and ground (GND). So you join <em>like with like</em>: all GNDs together, all 3V3s together, all SDAs together, all SCLs together. The moisture sensor joins only the 3V3 and GND groups.</p>
+</div>
+<div class="plate"><figure><svg id="figHarness" viewBox="0 0 980 600" role="img" aria-label="Sensor harness wiring diagram"></svg>
+<figcaption>The four solder splices (circles) join like wires. Each splice has one pigtail going to the ESP32. The moisture sensor's signal wire (green) skips the splices and plugs straight in.</figcaption></figure></div>
+<div class="wrap">
+
+<div class="callout tip"><strong>Plan lengths first</strong>
+<p>Put the parts where they'll live. The <strong>light sensor</strong> goes on top, facing the sky, and nothing should shade it. The <strong>proximity sensor</strong> faces forward, toward where people walk up. Keep the <strong>temperature sensor</strong> at least 5 cm away from the ESP32, which runs a few degrees warm and would make your plant "feel" hotter than it is. Measure each sensor's distance to where the ESP32 will sit, add 5 cm, and cut wires to that length.</p></div>
+
+<div class="step"><div class="n">1</div><div class="body"><h4>Cut the two Grove cables</h4>
+<p>Take one Grove cable per Grove sensor (AHT20 and VL53L0X). Cut it to length, keeping the plug end that goes into the sensor. Strip and tin the 4 cut wires. Grove colours are always the same: <span class="sw" style="background:var(--w-gnd)"></span>black GND, <span class="sw" style="background:var(--w-3v3)"></span>red VCC, <span class="sw" style="background:var(--w-sda)"></span>white SDA, <span class="sw" style="background:var(--w-scl)"></span>yellow SCL.</p>
+<label class="done-toggle"><input type="checkbox" data-step="h1"> Done</label></div></div>
+
+<div class="step"><div class="n">2</div><div class="body"><h4>Solder 4 wires onto the BH1750 light sensor</h4>
+<p>The Adafruit board has a row of holes. Use Skill C to solder a wire into <span class="pin">VIN</span>, <span class="pin">GND</span>, <span class="pin">SDA</span> and <span class="pin">SCL</span>: push the wire through from the top and solder on the back. Leave <span class="pin">3Vo</span> and <span class="pin">ADDR</span> empty.</p>
+<figure><svg id="figBH" viewBox="0 0 640 300" role="img" aria-label="BH1750 pads with four wires"></svg>
+<figcaption>Read the labels printed on <em>your</em> board. Pin order can differ between board versions. Use VIN (not 3Vo): it accepts our 3.3 V supply. Leave 3Vo and ADDR empty.</figcaption></figure>
+<p><em>Alternative:</em> plug a STEMMA QT / Qwiic cable into the side socket and cut its far end. That's no soldering on the sensor, but the wires are very thin.</p>
+<label class="done-toggle"><input type="checkbox" data-step="h2"> Done</label></div></div>
+
+<div class="step"><div class="n">3</div><div class="body"><h4>Prepare the moisture sensor cable</h4>
+<p>The sensor comes with a 3-wire cable that has plugs on the far end. Check the labels printed on the sensor to identify the wires (usually black = GND, red = VCC, yellow or blue = AOUT). <strong>Keep the plug on AOUT</strong>, because it goes straight onto the ESP32. Cut the plugs off VCC and GND, then strip and tin those two wires.</p>
+<label class="done-toggle"><input type="checkbox" data-step="h3"> Done</label></div></div>
+
+<div class="step"><div class="n">4</div><div class="body"><h4>Make the four splices: many wires into one</h4>
+<p>Each splice joins one pigtail with all its matching sensor wires:</p>
+<div class="tablewrap"><table>
+<thead><tr><th>Splice</th><th>Wires going in</th><th>Pigtail out to ESP32</th></tr></thead>
+<tbody>
+<tr><td><span class="sw" style="background:var(--w-gnd)"></span><strong>GND</strong></td><td>BH1750 GND, AHT20 black, VL53L0X black, moisture GND</td><td><span class="pin">J3-1 GND</span></td></tr>
+<tr><td><span class="sw" style="background:var(--w-3v3)"></span><strong>3V3</strong></td><td>BH1750 VIN, AHT20 red, VL53L0X red, moisture VCC</td><td><span class="pin">J1-1 3V3</span></td></tr>
+<tr><td><span class="sw" style="background:var(--w-sda)"></span><strong>SDA</strong></td><td>BH1750 SDA, AHT20 white, VL53L0X white</td><td><span class="pin">J1-12 GPIO 8</span></td></tr>
+<tr><td><span class="sw" style="background:var(--w-scl)"></span><strong>SCL</strong></td><td>BH1750 SCL, AHT20 yellow, VL53L0X yellow</td><td><span class="pin">J1-15 GPIO 9</span></td></tr>
+</tbody></table></div>
+<p>For a many-wire splice, use a <strong>pigtail twist</strong>:</p>
+</div></div>
+</div>
+<div class="plate"><div class="panels" id="panelsMulti"></div></div>
+<div class="wrap">
+<div class="step"><div class="n">↳</div><div class="body">
+<ol>
+<li>Slide a 25 mm piece of <strong>6 mm heat-shrink</strong> onto the pigtail first.</li>
+<li>Gather the tinned ends so they all point the same way, with the tips lined up.</li>
+<li>Twist them together like a rope for 8–10 mm.</li>
+<li>Heat the twist from underneath and feed solder from the top until it soaks all the way through.</li>
+<li>Trim the tip to 6 mm and fold it flat along the wires. Shrink the tubing over it.</li>
+</ol>
+<div class="callout tip"><strong>Stagger the splices</strong><p>Place the four splices 3 cm apart along the bundle, not all at one point. Side by side they'd make a fat lump, and bare spots could touch. Staggered, they make a slim cable.</p></div>
+<label class="done-toggle"><input type="checkbox" data-step="h4"> Done</label></div></div>
+
+<div class="step"><div class="n">5</div><div class="body"><h4>Tidy the harness</h4>
+<p>Put a zip tie or a strip of tape every 5 cm. Check that the flag on each pigtail is still readable.</p>
+<label class="done-toggle"><input type="checkbox" data-step="h5"> Done</label></div></div>
+
+<!-- ============ PLAYER ============ -->
+<h2 id="player">6 · Wire the MP3 player &amp; speaker</h2>
+<p>The DFPlayer Mini is the stamp-sized board with a microSD slot. It plays the voice clips and drives the speaker by itself. It needs power (5V and GND), two data wires, one "busy" wire, the speaker and a capacitor.</p>
+</div>
+<div class="plate"><figure><svg id="figPlayer" viewBox="0 0 980 560" role="img" aria-label="DFPlayer wiring diagram"></svg>
+<figcaption>Seen from the top with the microSD slot at the top. Pin names on the left column read top to bottom: VCC, RX, TX, DAC_R, DAC_L, SPK1, GND, SPK2. The blue cylinder is the 470 µF capacitor, soldered on top of the module with its stripe (–) on GND. <strong>Compare the pin names with the printing on your module</strong>, because clones are sometimes labelled on the underside only.</figcaption></figure></div>
+<div class="wrap">
+
+<div class="callout warn"><strong>Never connect a speaker wire to GND</strong>
+<p>The DFPlayer's amplifier pushes on <em>both</em> speaker pins. Connect the speaker <strong>only</strong> between SPK1 and SPK2. Connecting either one to ground can kill the amplifier.</p></div>
+
+<div class="step"><div class="n">1</div><div class="body"><h4>Solder the capacitor onto the player</h4>
+<p>The capacitor has a <strong>minus stripe</strong> (a row of "–" marks) on its side, and the long leg is <strong>plus</strong>. Bend the legs so the <strong>plus leg</strong> touches the <span class="pin">VCC</span> pin and the <strong>minus leg</strong> touches the <span class="pin">GND</span> pin on the same side (the 7th pin down). Solder each leg to its pin <em>right at the module</em>, where the pin comes through the board, so the plugs still fit below. Slip 2.5 mm heat-shrink over whichever leg runs past the other pins, so it can't touch them.</p>
+<figure><svg id="figCap" viewBox="0 0 640 310" role="img" aria-label="Capacitor polarity and placement on DFPlayer"></svg>
+<figcaption>Polarity matters. A capacitor soldered in backwards can pop. The stripe goes to GND.</figcaption></figure>
+<label class="done-toggle"><input type="checkbox" data-step="p1"> Done</label></div></div>
+
+<div class="step"><div class="n">2</div><div class="body"><h4>Make the resistor jumper (ESP32 → player RX)</h4>
+<p>Take two pigtails. Shorten the 1 kΩ resistor's legs to 8 mm each. Solder one pigtail to each leg (Skill B), then cover the whole resistor with heat-shrink. You get one cable with a plug at both ends and the resistor hidden in the middle. Flag it <span class="pin">J1-10 GPIO 17</span> on one end and <span class="pin">DFP RX</span> on the other.</p>
+<figure><svg id="figRes" viewBox="0 0 640 170" role="img" aria-label="Inline resistor jumper"></svg>
+<figcaption>A resistor has no direction, so either way round is fine. Brown-black-red means 1 kΩ.</figcaption></figure>
+<label class="done-toggle"><input type="checkbox" data-step="p2"> Done</label></div></div>
+
+<div class="step"><div class="n">3</div><div class="body"><h4>Prepare the speaker leads</h4>
+<p>If your speaker already has wires with a small white plug, cut the plug off. If it has bare metal tabs, solder about 25 cm of red and black wire to them (Skill C). Then solder a pigtail onto the other end of each speaker wire, so the speaker ends in two plugs. Flag them <span class="pin">SPK1</span> and <span class="pin">SPK2</span>.</p>
+<p>With a single speaker, it doesn't matter which wire goes to SPK1 and which to SPK2.</p>
+<label class="done-toggle"><input type="checkbox" data-step="p3"> Done</label></div></div>
+
+<div class="step"><div class="n">4</div><div class="body"><h4>Use plain jumpers for the rest</h4>
+<p>Four uncut female–female jumpers go between the player and the ESP32:</p>
+<div class="tablewrap"><table>
+<thead><tr><th>Player pin</th><th>ESP32 pin</th><th>Colour idea</th></tr></thead>
+<tbody>
+<tr><td><span class="pin">VCC</span></td><td><span class="pin">J1-21 5V</span></td><td><span class="sw" style="background:var(--w-5v)"></span>orange</td></tr>
+<tr><td><span class="pin">GND</span> (left column, 7th pin)</td><td><span class="pin">J1-22 GND</span></td><td><span class="sw" style="background:var(--w-gnd)"></span>black</td></tr>
+<tr><td><span class="pin">TX</span></td><td><span class="pin">J1-11 GPIO 18</span></td><td><span class="sw" style="background:var(--w-violet)"></span>purple</td></tr>
+<tr><td><span class="pin">BUSY</span> (right column, top)</td><td><span class="pin">J1-9 GPIO 16</span></td><td><span class="sw" style="background:var(--w-grey)"></span>grey</td></tr>
+<tr><td><span class="pin">RX</span></td><td><span class="pin">J1-10 GPIO 17</span>, through the resistor jumper</td><td><span class="sw" style="background:var(--w-blue)"></span>blue</td></tr>
+</tbody></table></div>
+<p>The VCC and GND plugs fit on the pins even with the capacitor soldered there, because you soldered it right at the module.</p>
+<label class="done-toggle"><input type="checkbox" data-step="p4"> Done</label></div></div>
+
+<div class="callout tip"><strong>My player has no pins, only holes</strong>
+<p>Then skip the plugs on that side. Solder the pigtails' bare ends straight into the player's holes (Skill C) and solder the capacitor legs into the same VCC and GND holes.</p></div>
+
+<!-- ============ EPAPER ============ -->
+<h2 id="epaper">7 · Connect the e-paper (no soldering)</h2>
+<p>Your <strong>Waveshare 1.54" V2 (Rev 2.1)</strong> came with a cable that has a white connector on one end and 8 loose plugs on the other. Push the white connector into the display. The 8 plugs go straight onto the ESP32.</p>
+</div>
+<div class="plate"><figure><svg id="figEpd" viewBox="0 0 980 440" role="img" aria-label="E-paper wiring diagram"></svg>
+<figcaption>Go by the labels printed next to the display's connector, not by the wire colours. Waveshare changes cable colours between batches.</figcaption></figure></div>
+<div class="wrap">
+<div class="callout leaf"><strong>Is there a 9th wire labelled PWR?</strong>
+<p>The Rev 2.1 boards we've seen have 8 pins. If yours has a 9th labelled <span class="pin">PWR</span>, plug it onto <span class="pin">J1-5 GPIO 5</span>. The firmware will switch it on. Without power on that pin, the display stays blank.</p></div>
+
+<!-- ============ TEST ============ -->
+<h2 id="test">8 · Test before you plug in</h2>
+<p>Five minutes with a multimeter catches almost every wiring mistake <em>before</em> it can damage anything. Set the meter to the beep (continuity) mode, the one with the little sound-wave symbol.</p>
+</div>
+<div class="plate"><figure><svg id="figMeter" viewBox="0 0 980 240" role="img" aria-label="Continuity testing with a multimeter"></svg>
+<figcaption>Touch one probe inside a pigtail's plug (a straightened paper clip helps) and the other to the far end. A beep means the two ends are connected.</figcaption></figure></div>
+<div class="wrap">
+<div class="check"><ul>
+<li><strong>Each splice beeps through.</strong> From the GND pigtail's plug, beep to the GND of every sensor (BH1750 GND pad, the black wire in each Grove plug, the moisture sensor GND). Repeat for 3V3, SDA and SCL.</li>
+<li><strong>No beep between different groups.</strong> 3V3 pigtail ↔ GND pigtail must be <em>silent</em>. So must SDA ↔ SCL, SDA ↔ GND and SCL ↔ GND. A beep here means two splices touch or a strand is poking through. Fix it before going on.</li>
+<li><strong>Resistor jumper:</strong> switch the meter to Ω. It should read about <strong>1 kΩ</strong> (0.95–1.05 k) end to end.</li>
+<li><strong>Player power:</strong> VCC pin ↔ GND pin must <em>not</em> beep. A short beep that fades away is OK, though: that's the capacitor charging.</li>
+<li><strong>Speaker:</strong> SPK1 ↔ SPK2 plugs read about 4 Ω.</li>
+</ul></div>
+
+<!-- ============ PLUG ============ -->
+<h2 id="plug">9 · Plug everything in</h2>
+<p><strong>Unplug the USB cable first.</strong> Then push each plug onto its pin, working down the list. Plugs go fully on, so you shouldn't see any metal between the plug and the black pin strip.</p>
+</div>
+<div class="plate"><figure><svg id="figPlug" viewBox="0 0 980 760" role="img" aria-label="ESP32 plug map"></svg>
+<figcaption>The plug map. Board seen from the top, USB ports at the bottom. Grey pins stay empty. <span class="pin">J1-13</span> (GPIO 3) and <span class="pin">J1-14</span> (GPIO 46) must stay free, or the board may not start.</figcaption></figure></div>
+<div class="wrap">
+<div class="tablewrap"><table id="plugTable">
+<thead><tr><th>✓</th><th>Pin</th><th>Name</th><th>Plug from</th></tr></thead>
+<tbody></tbody></table></div>
+
+<div class="callout tip"><strong>Mounting the ESP32</strong>
+<p>The pins stick out of the bottom, so the board can't lie flat. Either stand it on two strips of thick double-sided foam tape along its edges, which gives enough room under it for the plugs, or mount it upside down with the pins pointing up. After everything works, put a small dab of hot glue on the side of each row of plugs to stop them from wiggling off. Hot glue peels off cleanly later.</p></div>
+
+<!-- ============ FINISH ============ -->
+<h2 id="finish">10 · Waterproof, SD card, first boot</h2>
+<h3>Seal the moisture sensor</h3>
+<p>These sensors die when water creeps into the electronics at the top. Paint the <strong>edges of the board</strong> and the area <strong>around the electronics</strong> with two coats of clear nail polish, letting it dry between coats. Then put a piece of 12 mm heat-shrink over the electronics. Only push the sensor into the soil up to the white line, never deeper.</p>
+</div>
+<div class="plate"><figure><svg id="figSeal" viewBox="0 0 980 260" role="img" aria-label="Sealing the moisture sensor"></svg>
+<figcaption>Seal the cut board edges too. Water creeps in through them.</figcaption></figure></div>
+<div class="wrap">
+
+<h3>Prepare the microSD card</h3>
+<p>Format the card as <strong>FAT32</strong>. Make numbered folders <code>01</code>, <code>02</code>, … with files named <code>001.mp3</code>, <code>002.mp3</code>, …. We'll generate the actual voice clips together in the next phase. For a first test, put any MP3 at <code>/01/001.mp3</code>.</p>
+
+<h3>First power-on</h3>
+<ol>
+<li>Double-check the three power pins: <span class="pin">J1-21 5V</span> goes only to the player's VCC. <span class="pin">J1-1</span> and <span class="pin">J1-2</span> (3V3) go only to the harness and the display.</li>
+<li>Plug the USB cable into the ESP32's port marked <strong>USB</strong> (the one next to the J3 side) and into the charger.</li>
+<li>The red power LED lights up. Nothing gets hot. Touch the sensors and the player chip for a few seconds to check: warm is fine, too hot to touch is not. If anything gets hot, unplug immediately and re-run the tests in section 8.</li>
+<li>Done! The hardware is ready for the firmware.</li>
+</ol>
+
+<!-- ============ TROUBLE ============ -->
+<h2 id="trouble">11 · If something doesn't work</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>Symptom</th><th>Likely cause</th><th>Fix</th></tr></thead>
+<tbody>
+<tr><td>Solder balls up and won't stick</td><td>Dirty tip, or the wire or pad isn't hot enough</td><td>Wipe the tip in the brass wool and re-tin it. Hold the iron on the joint 1 second longer before feeding solder.</td></tr>
+<tr><td>Insulation melts back far from the joint</td><td>The iron stayed on too long</td><td>Heat for 2–3 seconds at most, and tin the wires first so joints need less heat.</td></tr>
+<tr><td>Board doesn't show up on the computer</td><td>A plug on <span class="pin">J1-13/14</span> (strapping pins), or a short on 3V3</td><td>Unplug everything, re-test, and plug the parts back one group at a time.</td></tr>
+<tr><td>A sensor is missing in the I²C scan</td><td>Broken strand in a splice, or SDA and SCL swapped at one sensor</td><td>Beep-test that sensor's wires from its plug to the pigtails.</td></tr>
+<tr><td>The board reboots when the speaker gets loud</td><td>Weak USB supply, or the capacitor is missing</td><td>Use a 2 A charger and keep the volume ≤ 20/30. Check the capacitor's polarity.</td></tr>
+<tr><td>Loud hiss or buzz from the speaker</td><td>The 1 kΩ resistor is missing, or a GND plug is loose</td><td>Use the resistor jumper and push the GND plugs fully on.</td></tr>
+<tr><td>E-paper stays blank</td><td>Wrong pin order, or the PWR pin isn't connected</td><td>Check against the e-paper table. On 9-pin boards, PWR goes on J1-5.</td></tr>
+</tbody></table></div>
+
+<!-- ============ PIN MAP ============ -->
+<h2 id="pinmap">12 · Pin map reference</h2>
+<p>For the firmware, and for you in six months.</p>
+<div class="tablewrap"><table>
+<thead><tr><th>Part</th><th>Part pin</th><th>ESP32 pin</th><th>GPIO</th></tr></thead>
+<tbody id="refTable"></tbody></table></div>
+<p style="color:var(--muted);font-size:.9rem">Pins avoided on purpose: GPIO 0, 3, 45 and 46 (start-up mode), 19/20 (USB), 26–32 (flash), 35–37 (the N8R8's PSRAM) and 43/44 (USB serial console).</p>
+</div>
+
+<script>
+/* ---------- theme toggle (per-viewer convenience) ---------- */
+(function(){
+  const root=document.documentElement, btn=document.getElementById('themeBtn');
+  try{const t=localStorage.getItem('pb-theme'); if(t) root.setAttribute('data-theme',t);}catch(e){}
+  btn.addEventListener('click',()=>{
+    const cur=root.getAttribute('data-theme') || (matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
+    const next=cur==='dark'?'light':'dark'; root.setAttribute('data-theme',next);
+    try{localStorage.setItem('pb-theme',next);}catch(e){}
+  });
+})();
+
+/* ---------- step checkboxes (per-viewer progress) ---------- */
+(function(){
+  let saved={}; try{saved=JSON.parse(localStorage.getItem('pb-steps')||'{}')}catch(e){}
+  const boxes=[...document.querySelectorAll('input[data-step]')];
+  const prog=document.getElementById('progress');
+  function update(){
+    const n=boxes.filter(b=>b.checked).length;
+    prog.innerHTML=`Your progress: <b>${n}</b> of ${boxes.length} steps ticked`;
+    boxes.forEach(b=>b.closest('.step')?.classList.toggle('is-done',b.checked));
+  }
+  boxes.forEach(b=>{b.checked=!!saved[b.dataset.step];b.addEventListener('change',()=>{saved[b.dataset.step]=b.checked;try{localStorage.setItem('pb-steps',JSON.stringify(saved))}catch(e){};update();});});
+  update();
+})();
+
+/* ---------- SVG helpers ---------- */
+const C=v=>`var(--${v})`;
+function wire(d,color,w=5){return `<path d="${d}" fill="none" stroke="${C('casing')}" stroke-width="${w+2.5}" stroke-linecap="round" stroke-linejoin="round"/><path d="${d}" fill="none" stroke="${color}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`}
+function curve(x1,y1,x2,y2){const dx=(x2-x1)*.5;return `M${x1} ${y1} C${x1+dx} ${y1},${x2-dx} ${y2},${x2} ${y2}`}
+function txt(x,y,s,o={}){return `<text x="${x}" y="${y}" font-size="${o.size||13}" ${o.anchor?`text-anchor="${o.anchor}"`:''} ${o.mono?'class="mono"':''} font-weight="${o.weight||400}" fill="${o.fill||C('ink')}" ${o.extra||''}>${s}</text>`}
+function box(x,y,w,h,fill,o={}){return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${o.r??8}" fill="${fill}" stroke="${o.stroke||C('casing')}" stroke-width="${o.sw||1.5}"/>`}
+function plug(x,y,label,color,side='right'){ // a female dupont plug, x,y = wire attach point
+  const w=26,h=16, px= side==='right'? x : x-w;
+  return box(px,y-h/2,w,h,'#202326',{r:2,stroke:C('casing')})+`<rect x="${side==='right'?px+w-6:px+2}" y="${y-3}" width="4" height="6" fill="${C('pin')}"/>`+
+    (label?txt(side==='right'?px+w+8:px-8,y+4,label,{anchor:side==='right'?'start':'end',mono:true,size:12,weight:700}):'');
+}
+function dot(x,y,r=5,fill=C('solder')){return `<circle cx="${x}" cy="${y}" r="${r}" fill="${fill}" stroke="${C('casing')}" stroke-width="1.5"/>`}
+function splice(x,y,label){return `<ellipse cx="${x}" cy="${y}" rx="22" ry="11" fill="${C('paper')}" stroke="${C('copper')}" stroke-width="2.5" stroke-dasharray="4 3"/>`+dot(x,y,6)+txt(x,y-17,label,{anchor:'middle',mono:true,size:11,weight:700,fill:C('copper')})}
+function module(x,y,w,h,title,sub){return box(x,y,w,h,C('module'),{r:10})+txt(x+12,y+24,title,{weight:700,size:15,fill:C('module-txt')})+(sub?txt(x+12,y+42,sub,{size:12,fill:C('module-txt'),extra:'opacity=".85"'}):'')}
+function modPin(x,y,label,side='right'){ // pin stub on a module edge
+  return `<rect x="${x-5}" y="${y-5}" width="10" height="10" fill="${C('pin')}" stroke="${C('casing')}"/>`+
+    txt(side==='right'?x-10:x+10,y+4,label,{anchor:side==='right'?'end':'start',mono:true,size:11,weight:700,fill:C('module-txt')});
+}
+const set=(id,html)=>{const el=document.getElementById(id); if(el) el.innerHTML=html;};
+function panel(svg,cap,vb='0 0 220 150'){return `<figure><svg viewBox="${vb}" role="img" aria-label="${cap.replace(/<[^>]+>/g,'')}">${svg}</svg><figcaption>${cap}</figcaption></figure>`}
+
+/* ---------- small technique drawings ---------- */
+function wireBody(x,y,len,color,strip=0,tinned=false,twist=false){ // horizontal wire ending at x+len (right end stripped)
+  let s=`<rect x="${x}" y="${y-7}" width="${len-strip}" height="14" rx="7" fill="${color}" stroke="${C('casing')}" stroke-width="1.5"/>`;
+  if(strip){
+    const sx=x+len-strip;
+    if(tinned){ s+=`<rect x="${sx-2}" y="${y-4}" width="${strip+2}" height="8" rx="4" fill="${C('solder')}" stroke="${C('casing')}" stroke-width="1"/>`;
+      s+=`<path d="M${sx+3} ${y-3} l4 6 M${sx+9} ${y-3} l4 6 M${sx+15} ${y-3} l4 6 M${sx+21} ${y-3} l4 6" stroke="${C('casing')}" stroke-opacity=".35" stroke-width="1"/>`; }
+    else if(twist){ for(let i=0;i<strip-2;i+=5) s+=`<path d="M${sx+i} ${y-4} l4 8" stroke="${C('copper')}" stroke-width="2.6"/>`; }
+    else { for(let k=-3;k<=3;k+=1.5) s+=`<line x1="${sx-1}" y1="${y+k}" x2="${sx+strip+(k%3?3:-2)}" y2="${y+k*1.6}" stroke="${C('copper')}" stroke-width="1.4"/>`; }
+  }
+  return s;
+}
+function iron(x,y,ang=-35){return `<g transform="translate(${x} ${y}) rotate(${ang})"><path d="M0 0 L26 -5 L26 5 Z" fill="#8a9095" stroke="${C('casing')}"/><rect x="26" y="-7" width="40" height="14" fill="#b8bec2" stroke="${C('casing')}"/><rect x="66" y="-10" width="70" height="20" rx="6" fill="#2a6f8f" stroke="${C('casing')}"/></g>`}
+function solderStick(x,y,ang=200){return `<g transform="translate(${x} ${y}) rotate(${ang})"><line x1="0" y1="0" x2="90" y2="0" stroke="${C('casing')}" stroke-width="6" stroke-linecap="round"/><line x1="0" y1="0" x2="90" y2="0" stroke="${C('solder')}" stroke-width="4" stroke-linecap="round"/></g>`}
+const label=(x,y,s,c=C('muted'))=>txt(x,y,s,{size:12,fill:c});
+
+set('panelsTin',
+  panel(wireBody(20,80,170,C('w-3v3'),40)+label(130,118,'↔ 6 mm')+txt(20,30,'1 · Strip',{weight:700,size:15}),'Strip 6 mm. The copper strands fan out.')+
+  panel(wireBody(20,80,170,C('w-3v3'),40,false,true)+txt(20,30,'2 · Twist',{weight:700,size:15}),'Twist the strands into a tight rope.')+
+  panel(wireBody(20,80,170,C('w-3v3'),40,false,true)+iron(165,92,-28)+solderStick(178,66,-60)+txt(20,30,'3 · Heat + feed',{weight:700,size:15}),'Iron <em>under</em> the wire, solder from <em>above</em>.')+
+  panel(wireBody(20,80,170,C('w-3v3'),40,true)+txt(20,30,'4 · Tinned',{weight:700,size:15})+label(20,118,'silver, thin, still textured'),'Done: thin and silver, no blob.')
+);
+set('panelsSplice',
+  panel(wireBody(10,60,110,C('w-gnd'),26,true)+`<rect x="30" y="${60-9}" width="40" height="18" rx="4" fill="${C('leaf')}" fill-opacity=".55" stroke="${C('casing')}"/>`+`<g transform="translate(210 0) scale(-1 1)">${wireBody(0,90,110,C('w-gnd'),26,true)}</g>`+txt(10,26,'1 · Tubing on first',{weight:700,size:15}),'Push heat-shrink onto one wire <strong>before</strong> soldering.')+
+  panel(wireBody(10,75,118,C('w-gnd'),26,true)+`<g transform="translate(220 0) scale(-1 1)">${wireBody(0,83,118,C('w-gnd'),26,true)}</g>`+iron(110,104,-25)+txt(10,26,'2 · Overlap + heat',{weight:700,size:15}),'Overlap the tinned ends and heat until they merge.')+
+  panel(wireBody(10,78,96,C('w-gnd'))+`<rect x="100" y="70" width="28" height="16" rx="7" fill="${C('solder')}" stroke="${C('casing')}"/>`+`<g transform="translate(220 0) scale(-1 1)">${wireBody(0,78,96,C('w-gnd'))}</g>`+`<rect x="30" y="69" width="40" height="18" rx="4" fill="${C('leaf')}" fill-opacity=".55" stroke="${C('casing')}"/>`+`<path d="M72 60 L110 60" stroke="${C('muted')}" stroke-width="2"/><path d="M104 55 l7 5 -7 5" fill="none" stroke="${C('muted')}" stroke-width="2"/>`+txt(10,26,'3 · Slide over',{weight:700,size:15}),'Let it cool, then slide the tubing over the joint.')+
+  panel(wireBody(10,78,96,C('w-gnd'))+`<g transform="translate(220 0) scale(-1 1)">${wireBody(0,78,96,C('w-gnd'))}</g>`+`<rect x="86" y="68" width="48" height="20" rx="6" fill="${C('leaf')}" stroke="${C('casing')}"/>`+`<path d="M95 120 q15 -14 30 0" fill="none" stroke="${C('copper')}" stroke-width="3"/><path d="M100 132 q10 -10 20 0" fill="none" stroke="${C('copper')}" stroke-width="3"/>`+txt(10,26,'4 · Shrink',{weight:700,size:15}),'Shrink with hot air. Done.')
+);
+set('panelsPad',
+  panel(box(30,70,160,46,C('module'),{r:4})+[0,1,2,3].map(i=>`<circle cx="${62+i*32}" cy="93" r="9" fill="${C('pin')}" stroke="${C('casing')}"/><circle cx="${62+i*32}" cy="93" r="4" fill="${C('module')}"/>`).join('')+txt(20,30,'Pad (hole)',{weight:700,size:15}),'A plated hole on a small board, like the BH1750.')+
+  panel(box(30,82,160,46,C('module'),{r:4})+`<circle cx="94" cy="105" r="9" fill="${C('pin')}" stroke="${C('casing')}"/>`+`<path d="M94 20 L94 104" stroke="${C('casing')}" stroke-width="10" stroke-linecap="round"/><path d="M94 20 L94 80" stroke="${C('w-sda')}" stroke-width="7"/><path d="M94 80 L94 104" stroke="${C('solder')}" stroke-width="4"/>`+txt(130,56,'wire in from top',{size:12,fill:C('muted')}),'Push the tinned wire through the hole.')+
+  panel(`<rect x="20" y="96" width="180" height="16" fill="${C('module')}" stroke="${C('casing')}"/>`+`<path d="M98 30 L98 128" stroke="${C('casing')}" stroke-width="9"/><path d="M98 30 L98 92" stroke="${C('w-sda')}" stroke-width="6"/><path d="M98 92 L98 128" stroke="${C('copper')}" stroke-width="3"/>`+`<path d="M78 112 Q98 150 118 112 Z" fill="${C('solder')}" stroke="${C('casing')}"/>`+txt(20,30,'Side view',{weight:700,size:15})+label(20,142,'volcano on the back'),'Heat pad + wire from the back, feed solder: a smooth volcano.')+
+  panel(`<rect x="40" y="70" width="40" height="60" rx="3" fill="${C('solder')}" stroke="${C('casing')}"/><circle cx="60" cy="86" r="7" fill="${C('paper')}" stroke="${C('casing')}"/>`+`<path d="M60 86 Q110 70 200 40" fill="none" stroke="${C('casing')}" stroke-width="9"/><path d="M60 86 Q110 70 200 40" fill="none" stroke="${C('w-gnd')}" stroke-width="6"/>`+`<ellipse cx="62" cy="88" rx="12" ry="8" fill="${C('solder')}" stroke="${C('casing')}"/>`+txt(20,30,'Speaker tab',{weight:700,size:15}),'For a tab: hook the wire through the tab\'s hole, then solder.')
+);
+set('panelsJoints',
+  panel(`<rect x="20" y="96" width="180" height="16" fill="${C('module')}" stroke="${C('casing')}"/><path d="M110 30 L110 128" stroke="${C('copper')}" stroke-width="5"/><path d="M84 112 Q110 150 136 112 Z" fill="${C('solder')}" stroke="${C('casing')}"/>`+txt(20,30,'✓ Good',{weight:700,size:16,fill:C('leaf')}),'Smooth, shiny, concave. The wire outline is still visible.')+
+  panel(`<rect x="20" y="96" width="180" height="16" fill="${C('module')}" stroke="${C('casing')}"/><path d="M110 30 L110 128" stroke="${C('copper')}" stroke-width="5"/><circle cx="110" cy="128" r="18" fill="${C('solder')}" stroke="${C('casing')}"/>`+txt(20,30,'✗ Blob',{weight:700,size:16,fill:C('warn')}),'A ball: too much solder, or the pad was too cold. Reheat it.')+
+  panel(`<rect x="20" y="96" width="180" height="16" fill="${C('module')}" stroke="${C('casing')}"/><path d="M80 30 L80 128 M140 30 L140 128" stroke="${C('copper')}" stroke-width="5"/><path d="M62 112 Q110 150 158 112 Z" fill="${C('solder')}" stroke="${C('casing')}"/>`+txt(20,30,'✗ Bridge',{weight:700,size:16,fill:C('warn')}),'Two pins joined by accident. Drag the hot tip between them to clear it.')+
+  panel(`<rect x="20" y="96" width="180" height="16" fill="${C('module')}" stroke="${C('casing')}"/><path d="M110 30 L110 128" stroke="${C('copper')}" stroke-width="5"/><path d="M104 116 L116 116 L114 124 L106 124 Z" fill="${C('solder')}" stroke="${C('casing')}"/><path d="M112 30 l14 -8 M108 40 l-14 -8" stroke="${C('copper')}" stroke-width="1.5"/>`+txt(20,30,'✗ Starved',{weight:700,size:16,fill:C('warn')}),'Too little solder, or stray strands. Add solder and twist the strands back.')
+);
+set('panelsMulti',
+  panel([0,1,2,3].map(i=>wireBody(10,40+i*22,150,[C('w-gnd'),C('w-gnd'),C('w-gnd'),C('w-gnd')][i],24,true)).join('')+`<rect x="40" y="${40+3*22-9}" width="44" height="18" rx="5" fill="${C('leaf')}" fill-opacity=".55" stroke="${C('casing')}"/>`+txt(10,22,'1 · Line up',{weight:700,size:15}),'All the tinned ends point the same way, tips level. Tubing is already on the pigtail.')+
+  panel([0,1,2,3].map(i=>`<path d="M10 ${40+i*22} Q90 ${40+i*22} 132 86" fill="none" stroke="${C('casing')}" stroke-width="12"/><path d="M10 ${40+i*22} Q90 ${40+i*22} 132 86" fill="none" stroke="${C('w-gnd')}" stroke-width="9"/>`).join('')+[0,1,2,3,4,5,6].map(i=>`<path d="M${136+i*8} 78 l6 16" stroke="${C('copper')}" stroke-width="3.2"/>`).join('')+txt(10,22,'2 · Twist',{weight:700,size:15}),'Twist them into one rope.')+
+  panel([0,1,2,3].map(i=>`<path d="M10 ${40+i*22} Q90 ${40+i*22} 132 86" fill="none" stroke="${C('casing')}" stroke-width="12"/><path d="M10 ${40+i*22} Q90 ${40+i*22} 132 86" fill="none" stroke="${C('w-gnd')}" stroke-width="9"/>`).join('')+`<rect x="132" y="78" width="58" height="16" rx="8" fill="${C('solder')}" stroke="${C('casing')}"/>`+iron(150,112,-15)+solderStick(170,60,-70)+txt(10,22,'3 · Solder through',{weight:700,size:15}),'Heat from below, feed solder from above until it soaks through.')+
+  panel([0,1,2,3].map(i=>`<path d="M10 ${50+i*14} Q70 ${50+i*14} 110 86" fill="none" stroke="${C('casing')}" stroke-width="12"/><path d="M10 ${50+i*14} Q70 ${50+i*14} 110 86" fill="none" stroke="${C('w-gnd')}" stroke-width="9"/>`).join('')+`<rect x="96" y="72" width="96" height="28" rx="9" fill="${C('leaf')}" stroke="${C('casing')}"/>`+txt(10,22,'4 · Fold + shrink',{weight:700,size:15}),'Trim to 6 mm, fold it flat along the wires, then shrink the 6 mm tubing over it.')
+);
+
+/* ---------- pigtail figure ---------- */
+set('figPigtail',
+  `<g>${plug(60,70,'',C('w-3v3'),'left')}${wire('M60 70 L440 70',C('w-3v3'),6)}${wire('M480 70 L860 70',C('w-3v3'),6)}${plug(860,70,'',C('w-3v3'),'right')}</g>`+
+  `<path d="M460 40 L460 100" stroke="${C('warn')}" stroke-width="2" stroke-dasharray="6 4"/>`+txt(460,30,'✂ cut here',{anchor:'middle',weight:700,fill:C('warn')})+
+  txt(40,30,'One female–female jumper…',{weight:700,size:15})+
+  txt(40,150,'…becomes two pigtails',{weight:700,size:15})+
+  `${plug(60,190,'',C('w-3v3'),'left')}${wire('M60 190 L380 190',C('w-3v3'),6)}<rect x="378" y="186" width="22" height="8" rx="4" fill="${C('solder')}" stroke="${C('casing')}"/>`+
+  `<rect x="110" y="178" width="70" height="24" rx="3" fill="#f2e7c9" stroke="${C('casing')}"/>`+txt(145,195,'J1-1 3V3',{anchor:'middle',mono:true,size:11,weight:700,fill:'#1c2420'})+
+  `${wire('M580 190 L900 190',C('w-3v3'),6)}${plug(900,190,'',C('w-3v3'),'right')}<rect x="560" y="186" width="22" height="8" rx="4" fill="${C('solder')}" stroke="${C('casing')}"/>`+
+  txt(420,222,'tinned end',{size:12,fill:C('muted'),anchor:'middle'})+txt(145,170,'tape flag',{size:12,fill:C('muted'),anchor:'middle'})
+);
+
+/* ---------- ESP32 data ---------- */
+const J1=['3V3','3V3','RST','GPIO4','GPIO5','GPIO6','GPIO7','GPIO15','GPIO16','GPIO17','GPIO18','GPIO8','GPIO3','GPIO46','GPIO9','GPIO10','GPIO11','GPIO12','GPIO13','GPIO14','5V','GND'];
+const J3=['GND','TX/43','RX/44','GPIO1','GPIO2','GPIO42','GPIO41','GPIO40','GPIO39','GPIO38','GPIO37','GPIO36','GPIO35','GPIO0','GPIO45','GPIO48','GPIO47','GPIO21','GPIO20','GPIO19','GND','GND'];
+/* Every connection: header, pin number (1-based), group, colour, what plugs in */
+const CONN=[
+ ['J1',1,'Sensors','w-3v3','Sensor harness · 3V3 pigtail','3V3','—'],
+ ['J1',2,'E-paper','w-3v3','E-paper VCC','VCC','—'],
+ ['J1',4,'Sensors','w-sig','Moisture sensor AOUT','AOUT','GPIO 4 (ADC1)'],
+ ['J1',8,'E-paper','w-brown','E-paper BUSY','BUSY','GPIO 15'],
+ ['J1',9,'Player','w-grey','DFPlayer BUSY','BUSY','GPIO 16'],
+ ['J1',10,'Player','w-blue','Resistor jumper → DFPlayer RX','RX (via 1 kΩ)','GPIO 17 (UART TX)'],
+ ['J1',11,'Player','w-violet','DFPlayer TX','TX','GPIO 18 (UART RX)'],
+ ['J1',12,'Sensors','w-sda','Sensor harness · SDA pigtail','SDA','GPIO 8'],
+ ['J1',15,'Sensors','w-scl','Sensor harness · SCL pigtail','SCL','GPIO 9'],
+ ['J1',16,'E-paper','w-pink','E-paper CS','CS','GPIO 10'],
+ ['J1',17,'E-paper','w-blue','E-paper DIN','DIN','GPIO 11'],
+ ['J1',18,'E-paper','w-teal','E-paper CLK','CLK','GPIO 12'],
+ ['J1',19,'E-paper','w-violet','E-paper DC','DC','GPIO 13'],
+ ['J1',20,'E-paper','w-5v','E-paper RST','RST','GPIO 14'],
+ ['J1',21,'Player','w-5v','DFPlayer VCC (5V)','VCC','—'],
+ ['J1',22,'Player','w-gnd','DFPlayer GND','GND','—'],
+ ['J3',1,'Sensors','w-gnd','Sensor harness · GND pigtail','GND','—'],
+ ['J3',21,'E-paper','w-gnd','E-paper GND','GND','—'],
+];
+const FORBID={J1:[13,14],J3:[14,15]};
+
+/* ESP32 drawing: returns {svg, pinXY(header,n)} */
+function esp32(x,y,pitch,opts={}){
+  const w=opts.w||230, rowsTop=y+70, h=70+21*pitch+90;
+  const xL=x+22, xR=x+w-22;
+  let s=box(x,y,w,h,C('board'),{r:10,stroke:C('board-edge'),sw:2});
+  s+=`<rect x="${x+w/2-50}" y="${y+8}" width="100" height="44" rx="4" fill="#c7ccd1" stroke="${C('casing')}"/>`+txt(x+w/2,y+35,'ESP32-S3',{anchor:'middle',weight:700,size:13,fill:'#1c2420'});
+  s+=`<rect x="${x+w/2-34}" y="${y+h-22}" width="28" height="30" rx="4" fill="#9aa3a8" stroke="${C('casing')}"/><rect x="${x+w/2+6}" y="${y+h-22}" width="28" height="30" rx="4" fill="#9aa3a8" stroke="${C('casing')}"/>`;
+  s+=txt(x+w/2-20,y+h+22,'UART',{anchor:'middle',size:10,fill:C('muted')})+txt(x+w/2+20,y+h+22,'USB',{anchor:'middle',size:10,fill:C('muted')});
+  s+=txt(xL,rowsTop-14,'J1',{anchor:'middle',mono:true,weight:700,size:12,fill:'#e9f3ea'})+txt(xR,rowsTop-14,'J3',{anchor:'middle',mono:true,weight:700,size:12,fill:'#e9f3ea'});
+  const used=new Set(CONN.map(c=>c[0]+'-'+c[1]));
+  for(let i=0;i<22;i++){
+    const py=rowsTop+i*pitch;
+    [['J1',xL,J1,'start'],['J3',xR,J3,'end']].forEach(([hd,px,names,anc])=>{
+      const k=hd+'-'+(i+1), u=used.has(k), bad=FORBID[hd].includes(i+1);
+      s+=`<rect x="${px-6}" y="${py-6}" width="12" height="12" fill="${u?C('pin'):'#55605a'}" stroke="${bad?C('warn'):C('casing')}" stroke-width="${bad?2.5:1}"/>`;
+      s+=txt(anc==='start'?px+12:px-12,py+4,`${i+1} ${names[i]}`,{anchor:anc,mono:true,size:Math.min(11,pitch*.55),weight:u?700:400,fill:u?'#ffffff':'#a9c4b0'});
+    });
+  }
+  return {svg:s,pin:(hd,n)=>[hd==='J1'?xL:xR, rowsTop+(n-1)*pitch]};
+}
+
+/* ---------- overview ---------- */
+(function(){
+  const e=esp32(640,40,17,{w:300});
+  let s='';
+  const groups=[
+    {name:'Sensor harness',sub:'BH1750 · AHT20 · VL53L0X · moisture',y:60,h:120,c:'w-sda'},
+    {name:'E-paper face',sub:'Waveshare 1.54" · stock cable',y:210,h:110,c:'w-pink'},
+    {name:'MP3 player + speaker',sub:'DFPlayer · 1 kΩ · 470 µF · 3 W',y:350,h:120,c:'w-5v'},
+  ];
+  const grpOf={'Sensors':0,'E-paper':1,'Player':2};
+  groups.forEach((g,i)=>{ s+=module(40,g.y,300,g.h,g.name,g.sub); });
+  // bundle lines
+  CONN.forEach(c=>{
+    const [hd,n,grp,col]=c; const [px,py]=e.pin(hd,n); const g=groups[grpOf[grp]];
+    const sx=340, sy=g.y+g.h/2 + (n%5-2)*6;
+    if(hd==='J1') s+=wire(curve(sx,sy,px-6,py),C(col),3);
+    else s+=wire(`M${sx} ${sy} C 520 ${sy}, 560 ${g.y<200?18:505}, 775 ${g.y<200?18:505} S ${px+40} ${py}, ${px+6} ${py}`,C(col),3);
+  });
+  s+=e.svg;
+  s+=txt(40,585,'Every line ends in a plug on the ESP32. Only the joins in the left-hand bundles get soldered.',{size:13,fill:C('muted')});
+  set('figOverview',s);
+})();
+
+/* ---------- BH1750 ---------- */
+(function(){
+  let s=box(40,60,320,140,C('module'),{r:10})+txt(60,90,'Adafruit BH1750',{weight:700,fill:C('module-txt'),size:15});
+  s+=`<rect x="170" y="100" width="40" height="30" rx="3" fill="#111" stroke="${C('casing')}"/>`+txt(190,150,'sensor faces up',{anchor:'middle',size:11,fill:C('module-txt')});
+  const pins=['VIN','3Vo','GND','SCL','SDA','ADDR'], cols={VIN:'w-3v3',GND:'w-gnd',SCL:'w-scl',SDA:'w-sda'};
+  pins.forEach((p,i)=>{ const px=80+i*48, py=180;
+    s+=`<circle cx="${px}" cy="${py}" r="9" fill="${C('pin')}" stroke="${C('casing')}"/><circle cx="${px}" cy="${py}" r="4" fill="${C('module')}"/>`;
+    s+=txt(px,py-16,p,{anchor:'middle',mono:true,size:11,weight:700,fill:C('module-txt')});
+    if(cols[p]){ const k=['VIN','GND','SCL','SDA'].indexOf(p), ey=70+k*40; s+=wire(`M${px} ${py} C ${px} 290, 440 ${ey}, 480 ${ey}`,C(cols[p]),5); s+=txt(490,ey+4,p==='VIN'?'→ 3V3 splice':`→ ${p} splice`,{size:12,mono:true,weight:700}); }
+  });
+  set('figBH',s);
+})();
+
+/* ---------- sensor harness ---------- */
+(function(){
+  let s='';
+  const sensors=[
+    {n:'BH1750 light',sub:'4 soldered wires',y:30,pins:[['GND','w-gnd'],['VIN','w-3v3'],['SDA','w-sda'],['SCL','w-scl']]},
+    {n:'AHT20 temp/humidity',sub:'Grove cable, cut',y:170,pins:[['GND','w-gnd'],['VCC','w-3v3'],['SDA','w-sda'],['SCL','w-scl']]},
+    {n:'VL53L0X proximity',sub:'Grove cable, cut',y:310,pins:[['GND','w-gnd'],['VCC','w-3v3'],['SDA','w-sda'],['SCL','w-scl']]},
+    {n:'Soil moisture',sub:'stock 3-wire cable',y:450,pins:[['GND','w-gnd'],['VCC','w-3v3'],['AOUT','w-sig']]},
+  ];
+  const sp={'w-gnd':[520,110,'GND'],'w-3v3':[560,230,'3V3'],'w-sda':[520,350,'SDA'],'w-scl':[560,450,'SCL']};
+  const out={'w-gnd':['J3-1 GND',80],'w-3v3':['J1-1 3V3',200],'w-sda':['J1-12 GPIO8',340],'w-scl':['J1-15 GPIO9',440]};
+  sensors.forEach(se=>{
+    s+=module(30,se.y,230,120,se.n,se.sub);
+    se.pins.forEach(([p,c],i)=>{
+      const py=se.y+62+i*15, px=260;
+      s+=`<rect x="${px-5}" y="${py-5}" width="10" height="10" fill="${C('pin')}" stroke="${C('casing')}"/>`+txt(px-12,py+4,p,{anchor:'end',mono:true,size:10,weight:700,fill:C('module-txt')});
+      if(c==='w-sig'){ s+=wire(curve(px+5,py,826,560),C(c),4); }
+      else { const [sx,sy]=sp[c]; s+=wire(curve(px+5,py,sx-22,sy),C(c),4); }
+    });
+  });
+  Object.entries(sp).forEach(([c,[sx,sy,l]])=>{ const [lab,oy]=out[c]; s+=wire(curve(sx+22,sy,826,oy),C(c),5); });
+  Object.entries(sp).forEach(([c,[sx,sy,l]])=>{ s+=splice(sx,sy,l+' splice'); });
+  Object.entries(out).forEach(([c,[lab,oy]])=>{ s+=plug(826,oy,lab,C(c),'right'); });
+  s+=plug(826,560,'J1-4 GPIO4',C('w-sig'),'right')+txt(826,588,'(AOUT keeps its own plug)',{size:11,fill:C('muted')});
+  set('figHarness',s);
+})();
+
+/* ---------- DFPlayer ---------- */
+function dfplayer(x,y,scale=1){
+  const w=200*scale,h=220*scale; let s=box(x,y,w,h,C('module'),{r:8});
+  s+=`<rect x="${x+w*.28}" y="${y-10}" width="${w*.44}" height="${h*.36}" rx="4" fill="#c7ccd1" stroke="${C('casing')}"/>`+txt(x+w/2,y+h*.2,'microSD',{anchor:'middle',size:12,fill:'#1c2420',weight:700});
+  const L=['VCC','RX','TX','DAC_R','DAC_L','SPK1','GND','SPK2'], R=['BUSY','USB−','USB+','ADK2','ADK1','IO2','GND','IO1'];
+  const pos={};
+  for(let i=0;i<8;i++){ const py=y+h*.36+18+i*((h*.64-26)/7);
+    s+=`<rect x="${x+8}" y="${py-6}" width="12" height="12" fill="${C('pin')}" stroke="${C('casing')}"/>`+txt(x+26,py+4,L[i],{mono:true,size:11,weight:700,fill:C('module-txt')});
+    s+=`<rect x="${x+w-20}" y="${py-6}" width="12" height="12" fill="${C('pin')}" stroke="${C('casing')}"/>`+txt(x+w-26,py+4,R[i],{anchor:'end',mono:true,size:11,weight:700,fill:C('module-txt')});
+    pos['L'+L[i]]=[x+14,py]; pos['R'+R[i]]=[x+w-14,py];
+  }
+  return {svg:s,pos};
+}
+(function(){
+  const d=dfplayer(560,90,1.25); let s='';
+  const P=d.pos;
+  // capacitor between VCC and GND on left column
+  const [vx,vy]=P.LVCC,[gx,gy]=P.LGND;
+  const cx=vx+120, cy=(vy+gy)/2;
+    // wires to ESP plugs on the left
+  const ex=170;
+  const runs=[
+    ['LVCC','w-5v','J1-21 5V',80],
+    ['LGND','w-gnd','J1-22 GND',130],
+    ['LTX','w-violet','J1-11 GPIO18',180],
+    ['LRX','w-blue','J1-10 GPIO17',230,true],
+  ];
+  runs.forEach(([k,c,lab,oy,res])=>{
+    const [px,py]=P[k];
+    const d1=`M${px} ${py} C ${px-140} ${py}, ${ex+260} ${oy}, ${ex+40} ${oy}`;
+    s+=wire(d1,C(c),5);
+    s+=plug(ex+40,oy,lab,C(c),'left');
+    if(res){ const rx=ex+150, ry=oy; s+=`<rect x="${rx-26}" y="${ry-9}" width="52" height="18" rx="7" fill="#d8c08e" stroke="${C('casing')}"/>`+[ -14,-6,2].map((o,i)=>`<rect x="${rx+o}" y="${ry-9}" width="5" height="18" fill="${['#7a4a1d','#111','#c0392b'][i]}"/>`).join('')+txt(rx,ry+26,'1 kΩ under heat-shrink',{anchor:'middle',size:11,fill:C('muted')}); }
+  });
+  // BUSY from right column top, loop over top to the left
+  const [bx,by]=P.RBUSY;
+  s+=wire(`M${bx} ${by} C ${bx+120} ${by}, ${bx+80} 30, ${bx-120} 30 L ${ex+150} 30 C ${ex+90} 30, ${ex+120} 280, ${ex+40} 280`,C('w-grey'),5)+plug(ex+40,280,'J1-9 GPIO16',C('w-grey'),'left');
+  // speaker
+  const [s1x,s1y]=P.LSPK1,[s2x,s2y]=P.LSPK2;
+  const spx=300, spy=450;
+  s+=wire(`M${s1x} ${s1y} C ${s1x-120} ${s1y}, ${spx+150} ${spy-20}, ${spx+56} ${spy-14}`,C('w-3v3'),5);
+  s+=wire(`M${s2x} ${s2y} C ${s2x-110} ${s2y+30}, ${spx+150} ${spy+30}, ${spx+56} ${spy+14}`,C('w-gnd'),5);
+  s+=`<circle cx="${spx}" cy="${spy}" r="58" fill="#3a3f45" stroke="${C('casing')}" stroke-width="2"/><circle cx="${spx}" cy="${spy}" r="40" fill="#23272b"/><circle cx="${spx}" cy="${spy}" r="14" fill="#555c63"/>`+txt(spx,spy+84,'3 W · 4 Ω speaker',{anchor:'middle',weight:700,size:13});
+  s+=txt(spx+80,spy-34,'SPK1',{mono:true,size:11,weight:700})+txt(spx+80,spy+46,'SPK2',{mono:true,size:11,weight:700});
+  s+=d.svg;
+  s+=`<path d="M${cx} ${cy-34} L${cx} ${vy} L${vx+8} ${vy}" fill="none" stroke="${C('solder')}" stroke-width="3"/><path d="M${cx} ${cy+34} L${cx} ${gy} L${gx+8} ${gy}" fill="none" stroke="${C('solder')}" stroke-width="3"/>`+
+    `<rect x="${cx-17}" y="${cy-34}" width="34" height="68" rx="8" fill="#1b3e8a" stroke="#fff" stroke-width="1.5"/><rect x="${cx-17}" y="${cy+8}" width="34" height="26" fill="#c9d2e8"/>`+
+    txt(cx,cy+27,'–',{anchor:'middle',weight:700,size:18,fill:'#1b3e8a'})+txt(cx,cy-10,'+',{anchor:'middle',weight:700,size:16,fill:'#fff'});
+  s+=txt(560,72,'DFPlayer Mini (top view)',{weight:700,size:14});
+  s+=txt(560,400,'Unused: DAC_R, DAC_L, USB±, ADK1/2, IO1/2',{size:12,fill:C('muted')})+txt(560,418,'and the second GND.',{size:12,fill:C('muted')});
+  set('figPlayer',s);
+})();
+
+/* ---------- capacitor close-up ---------- */
+(function(){
+  let s=`<rect x="60" y="70" width="80" height="150" rx="16" fill="#1b3e8a" stroke="${C('casing')}" stroke-width="2"/><rect x="60" y="70" width="26" height="150" fill="#c9d2e8"/>`+
+    [0,1,2,3,4].map(i=>txt(73,100+i*26,'–',{anchor:'middle',weight:800,size:20,fill:'#1b3e8a'})).join('')+
+    `<line x1="85" y1="220" x2="85" y2="262" stroke="${C('solder')}" stroke-width="4"/><line x1="115" y1="220" x2="115" y2="290" stroke="${C('solder')}" stroke-width="4"/>`+
+    txt(85,284,'– short',{anchor:'end',size:12,weight:700})+txt(124,288,'+ long',{size:12,weight:700})+txt(100,56,'470 µF 10 V',{anchor:'middle',weight:700});
+  // module edge with pins
+  s+=`<rect x="320" y="40" width="250" height="240" rx="8" fill="${C('module')}" stroke="${C('casing')}"/>`+txt(445,66,'DFPlayer, left column',{anchor:'middle',fill:C('module-txt'),weight:700,size:13});
+  const L=['VCC','RX','TX','DAC_R','DAC_L','SPK1','GND','SPK2'];
+  L.forEach((p,i)=>{const py=86+i*26; s+=`<rect x="334" y="${py-7}" width="14" height="14" fill="${C('pin')}" stroke="${C('casing')}"/>`+txt(356,py+4,p,{mono:true,size:11,weight:700,fill:C('module-txt')});});
+  s+=`<path d="M341 86 L250 86 L250 120" fill="none" stroke="${C('solder')}" stroke-width="4"/><path d="M341 242 L250 242 L250 200" fill="none" stroke="${C('solder')}" stroke-width="4"/>`+
+     `<rect x="230" y="120" width="40" height="80" rx="9" fill="#1b3e8a" stroke="${C('casing')}"/><rect x="230" y="176" width="40" height="24" fill="#c9d2e8"/>`+txt(250,194,'–',{anchor:'middle',weight:800,size:18,fill:'#1b3e8a'})+txt(250,140,'+',{anchor:'middle',weight:800,size:16,fill:'#fff'})+
+     `<rect x="255" y="212" width="80" height="10" rx="3" fill="${C('leaf')}" opacity=".85"/>`+txt(170,290,'heat-shrink over the leg that passes the other pins',{size:11,fill:C('muted')})+
+     dot(341,86,6)+dot(341,242,6);
+  set('figCap',s);
+})();
+
+/* ---------- resistor jumper ---------- */
+(function(){
+  let s=plug(60,80,'',C('w-blue'),'left')+wire('M60 80 L250 80',C('w-blue'),6)+wire('M390 80 L580 80',C('w-blue'),6)+plug(580,80,'',C('w-blue'),'right');
+  s+=`<line x1="250" y1="80" x2="390" y2="80" stroke="${C('solder')}" stroke-width="3"/><rect x="285" y="66" width="70" height="28" rx="11" fill="#d8c08e" stroke="${C('casing')}"/>`+
+     [['#7a4a1d',296],['#111',308],['#c0392b',320],['#c8a13a',340]].map(([c,x])=>`<rect x="${x}" y="66" width="6" height="28" fill="${c}"/>`).join('')+
+     `<rect x="240" y="62" width="160" height="36" rx="10" fill="${C('leaf')}" fill-opacity=".22" stroke="${C('leaf')}" stroke-dasharray="5 4"/>`+
+     txt(320,120,'heat-shrink covers resistor + both joints',{anchor:'middle',size:12,fill:C('muted')})+
+     txt(30,40,'→ J1-10 GPIO17',{mono:true,size:12,weight:700})+txt(610,40,'DFP RX ←',{mono:true,size:12,weight:700,anchor:'end'})+
+     txt(320,150,'brown · black · red · gold = 1 kΩ',{anchor:'middle',size:12,weight:700});
+  set('figRes',s);
+})();
+
+/* ---------- e-paper ---------- */
+(function(){
+  let s=box(40,60,240,300,'#e9e9e2',{r:10})+`<rect x="62" y="84" width="196" height="196" fill="#f7f7f2" stroke="${C('casing')}"/>`+txt(160,190,'(•_•)',{anchor:'middle',size:34,fill:'#1c2420',extra:'font-family="JetBrains Mono, monospace"'})+txt(160,320,'Waveshare 1.54" V2',{anchor:'middle',weight:700,size:13,fill:'#1c2420'})+txt(160,340,'Rev 2.1 · back side has connector',{anchor:'middle',size:11,fill:'#5b665f'});
+  s+=`<rect x="280" y="150" width="26" height="110" rx="3" fill="#f2f2f2" stroke="${C('casing')}"/>`;
+  const rows=[['VCC','w-3v3','J1-2 3V3'],['GND','w-gnd','J3-21 GND'],['DIN','w-blue','J1-17 GPIO11'],['CLK','w-teal','J1-18 GPIO12'],['CS','w-pink','J1-16 GPIO10'],['DC','w-violet','J1-19 GPIO13'],['RST','w-5v','J1-20 GPIO14'],['BUSY','w-brown','J1-8 GPIO15']];
+  rows.forEach(([p,c,dst],i)=>{ const y0=158+i*13, y1=60+i*44;
+    s+=wire(curve(306,y0,640,y1),C(c),4)+plug(640,y1,'',C(c),'right');
+    s+=txt(628,y1-9,p,{mono:true,size:12,weight:700,anchor:'end'})+txt(680,y1+4,dst,{mono:true,size:13,weight:700});
+  });
+  s+=txt(640,412,'All 8 plugs go straight onto the ESP32. No soldering.',{size:12,fill:C('muted')});
+  set('figEpd',s);
+})();
+
+/* ---------- multimeter ---------- */
+(function(){
+  let s=`<rect x="40" y="30" width="150" height="190" rx="14" fill="#f2c230" stroke="${C('casing')}" stroke-width="2"/><rect x="58" y="48" width="114" height="46" rx="4" fill="#cfd8c6" stroke="${C('casing')}"/>`+txt(115,80,'0.4 Ω',{anchor:'middle',mono:true,weight:700,size:20,fill:'#1c2420'})+
+    `<circle cx="115" cy="150" r="34" fill="#2b2f33" stroke="${C('casing')}"/><path d="M115 150 L135 128" stroke="#f2c230" stroke-width="5" stroke-linecap="round"/>`+txt(150,122,'))) ',{size:13,weight:700,fill:'#1c2420'});
+  s+=wire('M90 220 C 120 300, 300 260, 340 150',C('w-3v3'),4)+wire('M140 220 C 200 330, 640 260, 700 150',C('w-gnd'),4);
+  s+=`<path d="M340 150 l10 -40" stroke="#c4c9cd" stroke-width="5"/>`+plug(360,110,'',C('w-gnd'),'right')+txt(330,80,'pigtail plug (GND)',{size:12,mono:true,weight:700});
+  s+=wire('M396 110 C 470 110, 520 140, 640 140',C('w-gnd'),5)+splice(560,128,'GND splice')+`<path d="M700 150 l-6 -22" stroke="#c4c9cd" stroke-width="5"/>`+box(680,60,180,70,C('module'))+txt(770,92,'sensor GND pin',{anchor:'middle',fill:C('module-txt'),weight:700,size:13})+txt(770,112,'BEEP = connected ✓',{anchor:'middle',fill:C('module-txt'),size:12});
+  set('figMeter',s);
+})();
+
+/* ---------- plug map ---------- */
+(function(){
+  const e=esp32(345,30,25,{w:290}); let s='';
+  CONN.forEach(([hd,n,grp,col,what])=>{
+    const [px,py]=e.pin(hd,n);
+    if(hd==='J1'){ s+=wire(`M${px-6} ${py} L 300 ${py}`,C(col),5)+plug(300,py,'',C(col),'left')+txt(266,py+4,what,{anchor:'end',size:12,weight:700}); }
+    else { s+=wire(`M${px+6} ${py} L 680 ${py}`,C(col),5)+plug(680,py,'',C(col),'right')+txt(714,py+4,what,{size:12,weight:700}); }
+  });
+  s+=e.svg;
+  s+=txt(40,745,'⚠ J1-13 and J1-14 (and J3-14/15) stay empty: start-up pins',{size:12,fill:C('warn'),weight:700});
+  set('figPlug',s);
+  // table
+  const tb=document.querySelector('#plugTable tbody');
+  tb.innerHTML=CONN.map(([hd,n,grp,col,what],i)=>`<tr><td><input type="checkbox" aria-label="plugged ${hd}-${n}" id="plug-${hd}-${n}"></td><td><span class="pin">${hd}-${n}</span></td><td class="mono">${(hd==='J1'?J1:J3)[n-1]}</td><td><span class="sw" style="background:var(--${col})"></span>${what}</td></tr>`).join('');
+  const rt=document.getElementById('refTable');
+  const part={Sensors:'Sensors',['E-paper']:'E-paper',Player:'DFPlayer'};
+  rt.innerHTML=CONN.map(([hd,n,grp,col,what,pp,gpio])=>`<tr><td>${what.split(' · ')[0].replace('Sensor harness','Sensor harness').replace(/ (VCC|GND|CS|DIN|CLK|DC|RST|BUSY|TX|AOUT).*$/,'')}</td><td class="mono">${pp}</td><td><span class="pin">${hd}-${n}</span></td><td class="mono">${gpio}</td></tr>`).join('');
+})();
+
+/* ---------- moisture seal ---------- */
+(function(){
+  let s=`<path d="M80 60 L380 60 L380 140 L740 140 L800 100 L740 60 L740 60" fill="none"/>`;
+  s+=`<path d="M60 70 L420 70 L420 190 L60 190 Z" fill="#1d1f22" stroke="${C('casing')}"/>`;
+  s+=`<path d="M420 100 L860 100 L900 130 L860 160 L420 160 Z" fill="#1d1f22" stroke="${C('casing')}"/>`;
+  s+=`<line x1="560" y1="96" x2="560" y2="164" stroke="#f4f4f0" stroke-width="3"/>`+txt(566,90,'soil line: never deeper',{size:12,weight:700});
+  s+=`<rect x="90" y="96" width="60" height="40" fill="#2b2f33"/><rect x="180" y="100" width="34" height="24" fill="#2b2f33"/><rect x="250" y="110" width="20" height="12" fill="#c9a227"/><rect x="290" y="96" width="44" height="30" fill="#2b2f33"/>`;
+  s+=`<path d="M52 62 L428 62 L428 198 L52 198 Z" fill="${C('leaf')}" fill-opacity=".18" stroke="${C('leaf')}" stroke-width="3" stroke-dasharray="7 5"/>`+txt(60,226,'nail polish ×2 on all edges and electronics, then 12 mm heat-shrink over the top part',{size:13,weight:700,fill:C('leaf')});
+  s+=`<path d="M30 130 L60 130" stroke="${C('w-gnd')}" stroke-width="8"/>`+txt(20,160,'cable',{size:11,fill:C('muted')});
+  set('figSeal',s);
+})();
+</script>

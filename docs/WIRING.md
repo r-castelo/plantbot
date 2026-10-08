@@ -1,5 +1,7 @@
 # Plantbot wiring plan
 
+> **Building it?** Follow the illustrated step-by-step [direct-wiring build guide](build-guide.html). It uses soldered harnesses that plug onto the ESP32, with no breadboard or perfboard.
+
 Target board: **ESP32-S3-DevKitC-1 N8R8** (8 MB flash, 8 MB octal PSRAM).
 
 ## 1. Pins we must NOT use on the N8R8
@@ -48,7 +50,7 @@ USB-C 5 V (≥ 2 A charger) ──► DevKitC "USB" or "UART" port
          DFPlayer VCC        all sensors + e-paper       everything
          (+ 470–1000 µF       (≈ 30–40 mA total)
           electrolytic and
-          100 nF ceramic
+          optional 100 nF
           across VCC/GND,
           close to module)
 ```
@@ -139,7 +141,7 @@ Use the Waveshare colour-coded cable that comes with the module:
   GND  ─────┤ GND                      GND ├────── GND
   SPK- ─────┤ SPK_2                    IO1 │
             └──────────────────────────────┘
-   + 470–1000 µF electrolytic (+ to VCC) and 100 nF across VCC/GND
+   + 470–1000 µF electrolytic (+ to VCC) (+ optional 100 nF) across VCC/GND
 ```
 
 * The speaker goes **between SPK_1 and SPK_2**. Never connect either speaker wire to GND: the onboard amp is a bridged (BTL) design, and grounding one side can kill it.
@@ -168,14 +170,25 @@ Copy the files onto a freshly formatted card **in order** (the DFPlayer indexes 
 
 ## 6. Shopping list for the bits that aren't on your list
 
-* Breadboard (full size) or a perfboard for the final build
-* Dupont jumper wires (F-F and M-F)
-* 2–3× **Grove → female jumper** cables
+* Female–female Dupont jumper wires, 20 cm (40 pcs). Cut in half, they become plug-ended "pigtails"
+* Grove 4-pin cables (usually included with the Grove modules)
+* Heat-shrink tubing assortment (1.5 / 2.5 / 6 / 12 mm)
 * 1× **1 kΩ** resistor (DFPlayer RX)
-* 1× **470–1000 µF / 10 V+** electrolytic + 1× **100 nF** ceramic capacitor
-* microSD card (≤ 32 GB) formatted FAT32
+* 1× **470 µF / 10 V** electrolytic capacitor (soldered across DFPlayer VCC/GND)
+* microSD card (≤ 32 GB), formatted FAT32
 * 5 V / 2 A USB-C power supply and cable
-* Optional: copper tape for the touch pad, a small enclosure / 3D-printed pot buddy
+* Optional: copper tape for the touch pad, hot glue, zip ties
+
+### Ground and 3V3 pin allocation (direct wiring)
+
+| ESP32 pin | Feeds |
+|---|---|
+| J1-1 3V3 | Sensor harness (BH1750, AHT20, VL53L0X, moisture) |
+| J1-2 3V3 | E-paper VCC |
+| J1-21 5V | DFPlayer VCC |
+| J1-22 GND | DFPlayer GND |
+| J3-1 GND | Sensor harness |
+| J3-21 GND | E-paper GND |
 
 ## 7. Bring-up order (test each block before adding the next)
 
